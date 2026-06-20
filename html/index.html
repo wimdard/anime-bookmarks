@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anime Bookmarks</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Sidebar ───────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🎌 Anime</h1>
+      <span>Bookmarks</span>
+    </div>
+
+    <button class="nav-btn" data-page="bookmarks" onclick="switchPage('bookmarks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+      </svg>
+      Закладки
+    </button>
+
+    <button class="nav-btn" data-page="search" onclick="switchPage('search')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      Поиск аниме
+    </button>
+
+    <div class="sidebar-stats" id="sidebar-stats">
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot" style="background:var(--watching)"></span>Смотрю</span>
+        <span class="stat-count" id="stat-watching">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot" style="background:var(--completed)"></span>Посмотрел</span>
+        <span class="stat-count" id="stat-completed">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot" style="background:var(--plan)"></span>Буду смотреть</span>
+        <span class="stat-count" id="stat-plan">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot" style="background:var(--hold)"></span>Отложил</span>
+        <span class="stat-count" id="stat-hold">0</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ──────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- ── Bookmarks page ──────────────────────────────── -->
+    <section class="page active" id="page-bookmarks">
+      <h2 class="page-title">Мои закладки</h2>
+
+      <!-- Status filter tabs -->
+      <div class="chips" id="status-chips">
+        <button class="chip active" data-status="all" onclick="filterStatus('all')">Все</button>
+        <button class="chip" data-status="watching"  onclick="filterStatus('watching')">Смотрю</button>
+        <button class="chip" data-status="completed" onclick="filterStatus('completed')">Посмотрел</button>
+        <button class="chip" data-status="plan"      onclick="filterStatus('plan')">Буду смотреть</button>
+        <button class="chip" data-status="hold"      onclick="filterStatus('hold')">Отложил</button>
+
+        <div style="margin-left:auto">
+          <input
+            id="bm-search"
+            type="text"
+            placeholder="Поиск в закладках..."
+            oninput="renderBookmarks()"
+            style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12.5px;outline:none;width:180px;color:var(--text);transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--accent)'"
+            onblur="this.style.borderColor='var(--border)'"
+          />
+        </div>
+      </div>
+
+      <!-- Genre filter (filled dynamically) -->
+      <div class="chips" id="bm-genre-chips" style="display:none">
+        <span class="chips-label">Жанр:</span>
+      </div>
+
+      <div class="results-label" id="bm-count"></div>
+      <div class="grid" id="bm-grid"></div>
+    </section>
+
+    <!-- ── Search page ─────────────────────────────────── -->
+    <section class="page" id="page-search">
+      <h2 class="page-title">Поиск аниме</h2>
+
+      <div class="search-wrap">
+        <input
+          id="search-input"
+          class="search-input"
+          type="text"
+          placeholder="Введите название аниме..."
+          oninput="onSearchInput()"
+        />
+        <button class="search-clear" id="search-clear" onclick="clearSearch()">×</button>
+      </div>
+
+      <!-- Genre chips -->
+      <div class="chips">
+        <span class="chips-label">Жанр:</span>
+        <button class="chip" data-gid="1"  onclick="toggleGenre(1,  'Action')">Action</button>
+        <button class="chip" data-gid="2"  onclick="toggleGenre(2,  'Adventure')">Adventure</button>
+        <button class="chip" data-gid="4"  onclick="toggleGenre(4,  'Comedy')">Comedy</button>
+        <button class="chip" data-gid="8"  onclick="toggleGenre(8,  'Drama')">Drama</button>
+        <button class="chip" data-gid="10" onclick="toggleGenre(10, 'Fantasy')">Fantasy</button>
+        <button class="chip" data-gid="14" onclick="toggleGenre(14, 'Horror')">Horror</button>
+        <button class="chip" data-gid="22" onclick="toggleGenre(22, 'Romance')">Romance</button>
+        <button class="chip" data-gid="24" onclick="toggleGenre(24, 'Sci-Fi')">Sci-Fi</button>
+        <button class="chip" data-gid="36" onclick="toggleGenre(36, 'Slice of Life')">Slice of Life</button>
+        <button class="chip" data-gid="37" onclick="toggleGenre(37, 'Supernatural')">Supernatural</button>
+        <button class="chip" data-gid="7"  onclick="toggleGenre(7,  'Mystery')">Mystery</button>
+        <button class="chip" data-gid="40" onclick="toggleGenre(40, 'Psychological')">Psychological</button>
+      </div>
+
+      <div class="results-label" id="search-label">Топ аниме</div>
+      <div class="grid" id="search-grid"></div>
+
+      <div class="load-more" id="load-more-wrap" style="display:none">
+        <button class="btn-more" onclick="loadMore()">Загрузить ещё</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ── Script ──────────────────────────────────────────────── -->
+<script>
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const DB_KEY = 'anime_bookmarks_v1';
+
+let bookmarks = {};        // { [mal_id]: { ...anime, status } }
+let currentPage = 'bookmarks';
+
+// Search state
+let searchQuery   = '';
+let activeGenreId = null;
+let activeGenreName = '';
+let searchPage    = 1;
+let searchHasMore = false;
+let searchDebounce = null;
+
+// Bookmarks filter
+let bmStatus = 'all';
+let bmGenre  = '';
+
+/* ═══════════════════════════════════════════
+   DB (localStorage)
+═══════════════════════════════════════════ */
+function loadDB() {
+  try {
+    bookmarks = JSON.parse(localStorage.getItem(DB_KEY)) || {};
+  } catch {
+    bookmarks = {};
+  }
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(bookmarks));
+  updateStats();
+}
+
+/* ═══════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════ */
+function updateStats() {
+  const counts = { watching: 0, completed: 0, plan: 0, hold: 0 };
+  Object.values(bookmarks).forEach(b => {
+    if (counts[b.status] !== undefined) counts[b.status]++;
+  });
+  document.getElementById('stat-watching').textContent  = counts.watching;
+  document.getElementById('stat-completed').textContent = counts.completed;
+  document.getElementById('stat-plan').textContent      = counts.plan;
+  document.getElementById('stat-hold').textContent      = counts.hold;
+}
+
+/* ═══════════════════════════════════════════
+   PAGE ROUTING
+═══════════════════════════════════════════ */
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === page);
+  });
+
+  if (page === 'bookmarks') renderBookmarks();
+  if (page === 'search')    { if (!document.getElementById('search-grid').children.length) fetchSearch(true); }
+}
+
+/* ═══════════════════════════════════════════
+   JIKAN API
+═══════════════════════════════════════════ */
+const JIKAN = 'https://api.jikan.moe/v4';
+
+async function jikanFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('API error');
+  return res.json();
+}
+
+function normalizeAnime(a) {
+  return {
+    mal_id:  a.mal_id,
+    title:   a.title,
+    title_jp: a.title_japanese || '',
+    image:   a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || '',
+    synopsis: a.synopsis || '',
+    score:   a.score,
+    episodes: a.episodes,
+    year:    a.year || a.aired?.prop?.from?.year || null,
+    genres:  (a.genres || []).map(g => g.name),
+  };
+}
+
+async function fetchSearch(reset = false) {
+  if (reset) {
+    searchPage = 1;
+    document.getElementById('search-grid').innerHTML = '<div class="loader">Загрузка...</div>';
+  }
+
+  let url;
+  if (searchQuery.trim()) {
+    url = `${JIKAN}/anime?q=${encodeURIComponent(searchQuery)}&page=${searchPage}&limit=20&sfw`;
+    document.getElementById('search-label').textContent = `Результаты для «${searchQuery}»`;
+  } else if (activeGenreId) {
+    url = `${JIKAN}/anime?genres=${activeGenreId}&page=${searchPage}&limit=20&order_by=score&sort=desc`;
+    document.getElementById('search-label').textContent = `Жанр: ${activeGenreName}`;
+  } else {
+    url = `${JIKAN}/top/anime?page=${searchPage}&limit=20`;
+    document.getElementById('search-label').textContent = 'Топ аниме';
+  }
+
+  try {
+    const data = await jikanFetch(url);
+    const items = (data.data || []).map(normalizeAnime);
+    searchHasMore = data.pagination?.has_next_page || false;
+
+    if (reset) {
+      document.getElementById('search-grid').innerHTML = '';
+    }
+
+    renderSearchResults(items);
+    document.getElementById('load-more-wrap').style.display = searchHasMore ? 'flex' : 'none';
+  } catch (err) {
+    document.getElementById('search-grid').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><h3>Ошибка загрузки</h3><p>Проверьте интернет-соединение</p></div>';
+  }
+}
+
+function loadMore() {
+  searchPage++;
+  fetchSearch(false);
+}
+
+/* ═══════════════════════════════════════════
+   SEARCH CONTROLS
+═══════════════════════════════════════════ */
+function onSearchInput() {
+  const val = document.getElementById('search-input').value;
+  searchQuery = val;
+  document.getElementById('search-clear').classList.toggle('visible', !!val);
+
+  // Clear genre when typing
+  if (val && activeGenreId) {
+    activeGenreId = null;
+    document.querySelectorAll('.chip[data-gid]').forEach(c => c.classList.remove('active'));
+  }
+
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => fetchSearch(true), 420);
+}
+
+function clearSearch() {
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.remove('visible');
+  fetchSearch(true);
+}
+
+function toggleGenre(id, name) {
+  if (activeGenreId === id) {
+    activeGenreId = null;
+    activeGenreName = '';
+    document.querySelector(`.chip[data-gid="${id}"]`).classList.remove('active');
+  } else {
+    if (activeGenreId) {
+      document.querySelector(`.chip[data-gid="${activeGenreId}"]`)?.classList.remove('active');
+    }
+    activeGenreId = id;
+    activeGenreName = name;
+    document.querySelector(`.chip[data-gid="${id}"]`).classList.add('active');
+    searchQuery = '';
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-clear').classList.remove('visible');
+  }
+  fetchSearch(true);
+}
+
+/* ═══════════════════════════════════════════
+   RENDER: SEARCH RESULTS
+═══════════════════════════════════════════ */
+function renderSearchResults(items) {
+  const grid = document.getElementById('search-grid');
+
+  if (items.length === 0 && searchPage === 1) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><h3>Ничего не найдено</h3></div>';
+    return;
+  }
+
+  items.forEach(anime => {
+    const bm = bookmarks[anime.mal_id];
+    grid.appendChild(buildCard(anime, bm?.status || null, 'search'));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER: BOOKMARKS PAGE
+═══════════════════════════════════════════ */
+function renderBookmarks() {
+  const query = document.getElementById('bm-search').value.toLowerCase().trim();
+  let items = Object.values(bookmarks);
+
+  if (bmStatus !== 'all') items = items.filter(b => b.status === bmStatus);
+  if (bmGenre)            items = items.filter(b => b.genres?.includes(bmGenre));
+  if (query)              items = items.filter(b => b.title?.toLowerCase().includes(query) || b.title_jp?.toLowerCase().includes(query));
+
+  // Sort by added (newest first — object key insertion order)
+  items = items.reverse();
+
+  const grid = document.getElementById('bm-grid');
+  grid.innerHTML = '';
+
+  document.getElementById('bm-count').textContent = items.length + ' аниме';
+
+  if (items.length === 0) {
+    grid.innerHTML = `
+      <div class="empty" style="grid-column:1/-1">
+        <div class="empty-icon">🎌</div>
+        <h3>Закладок пока нет</h3>
+        <p>${bmStatus !== 'all' || query || bmGenre ? 'Ничего не найдено по фильтрам' : 'Перейдите в «Поиск аниме», чтобы добавить первое аниме'}</p>
+      </div>`;
+    return;
+  }
+
+  items.forEach(anime => {
+    grid.appendChild(buildCard(anime, anime.status, 'bookmarks'));
+  });
+
+  // Update genre chips from bookmarks
+  updateBmGenreChips();
+}
+
+function updateBmGenreChips() {
+  const allGenres = new Set();
+  Object.values(bookmarks).forEach(b => (b.genres || []).forEach(g => allGenres.add(g)));
+
+  const wrap = document.getElementById('bm-genre-chips');
+  if (!allGenres.size) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+
+  // Clear old chips (keep label)
+  wrap.querySelectorAll('.chip').forEach(c => c.remove());
+
+  [...allGenres].sort().forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (bmGenre === g ? ' active' : '');
+    btn.textContent = g;
+    btn.onclick = () => {
+      bmGenre = bmGenre === g ? '' : g;
+      renderBookmarks();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function filterStatus(status) {
+  bmStatus = status;
+  document.querySelectorAll('#status-chips .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.status === status);
+  });
+  renderBookmarks();
+}
+
+/* ═══════════════════════════════════════════
+   CARD BUILDER
+═══════════════════════════════════════════ */
+function buildCard(anime, status, context) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.malId = anime.mal_id;
+
+  // Image
+  if (anime.image) {
+    const img = document.createElement('img');
+    img.className = 'card-img';
+    img.src = anime.image;
+    img.alt = anime.title;
+    img.loading = 'lazy';
+    card.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'card-img-ph';
+    ph.textContent = '🎌';
+    card.appendChild(ph);
+  }
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'card-body';
+
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.textContent = anime.title;
+  body.appendChild(title);
+
+  const meta = document.createElement('div');
+  meta.className = 'card-meta';
+  if (anime.score) {
+    const score = document.createElement('span');
+    score.className = 'card-score';
+    score.textContent = '★ ' + anime.score;
+    meta.appendChild(score);
+  }
+  if (anime.episodes) {
+    const ep = document.createElement('span');
+    ep.className = 'card-ep';
+    ep.textContent = anime.episodes + ' эп.';
+    meta.appendChild(ep);
+  }
+  if (anime.year) {
+    const yr = document.createElement('span');
+    yr.className = 'card-ep';
+    yr.textContent = anime.year;
+    meta.appendChild(yr);
+  }
+  body.appendChild(meta);
+
+  if (anime.genres?.length) {
+    const tags = document.createElement('div');
+    tags.className = 'card-genres';
+    anime.genres.slice(0, 3).forEach(g => {
+      const tag = document.createElement('span');
+      tag.className = 'genre-tag';
+      tag.textContent = g;
+      tags.appendChild(tag);
+    });
+    body.appendChild(tags);
+  }
+
+  card.appendChild(body);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'card-footer';
+  footer.appendChild(buildFooter(anime, status, context, footer));
+  card.appendChild(footer);
+
+  return card;
+}
+
+function buildFooter(anime, status, context, footerEl) {
+  const frag = document.createDocumentFragment();
+
+  if (!status) {
+    // Not bookmarked → Add button
+    const btn = document.createElement('button');
+    btn.className = 'btn-add';
+    btn.textContent = '+ Добавить';
+    btn.onclick = () => {
+      addBookmark(anime, 'plan');
+      // Rebuild footer in place
+      footerEl.innerHTML = '';
+      footerEl.appendChild(buildFooter(anime, 'plan', context, footerEl));
+      toast('Добавлено в «Буду смотреть»');
+    };
+    frag.appendChild(btn);
+  } else {
+    // Bookmarked → select + remove
+    const sel = document.createElement('select');
+    sel.className = 'status-select';
+    sel.dataset.status = status;
+
+    [
+      ['watching',  'Смотрю'],
+      ['completed', 'Посмотрел'],
+      ['plan',      'Буду смотреть'],
+      ['hold',      'Отложил'],
+    ].forEach(([val, label]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      if (val === status) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    sel.onchange = () => {
+      setStatus(anime.mal_id, sel.value);
+      sel.dataset.status = sel.value;
+      toast('Статус обновлён');
+      if (context === 'bookmarks') renderBookmarks();
+    };
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'btn-remove';
+    btnDel.textContent = '×';
+    btnDel.title = 'Удалить';
+    btnDel.onclick = () => {
+      removeBookmark(anime.mal_id);
+      footerEl.innerHTML = '';
+      footerEl.appendChild(buildFooter(anime, null, context, footerEl));
+      toast('Удалено из закладок');
+      if (context === 'bookmarks') renderBookmarks();
+    };
+
+    frag.appendChild(sel);
+    frag.appendChild(btnDel);
+  }
+
+  return frag;
+}
+
+/* ═══════════════════════════════════════════
+   BOOKMARK CRUD
+═══════════════════════════════════════════ */
+function addBookmark(anime, status) {
+  bookmarks[anime.mal_id] = { ...anime, status };
+  saveDB();
+}
+
+function setStatus(malId, status) {
+  if (bookmarks[malId]) {
+    bookmarks[malId].status = status;
+    saveDB();
+  }
+}
+
+function removeBookmark(malId) {
+  delete bookmarks[malId];
+  saveDB();
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+function toast(msg) {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+loadDB();
+updateStats();
+renderBookmarks();
+switchPage('bookmarks');
+
+// Kick off search page preload in background
+setTimeout(() => fetchSearch(true), 200);
+</script>
+</body>
+</html>
